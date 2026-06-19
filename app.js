@@ -47,13 +47,6 @@ const templates = [
   "已抵達，這張卡可以忽略。",
 ];
 
-const samplePeople = [
-  { nickname: "小柏", vehicle: "自行車", status: "休息中", meters: 850, minutes: 8 },
-  { nickname: "Rider 17", vehicle: "重機", status: "我已出發", meters: 2800, minutes: 12 },
-  { nickname: "海線慢走", vehicle: "徒步", status: "問路況", meters: 7200, minutes: 18 },
-  { nickname: "阿倫", vehicle: "機車", status: "補給詢問", meters: 12800, minutes: 25 },
-];
-
 let state = loadState();
 
 const els = {
@@ -142,14 +135,6 @@ function formatRangeLabel(km) {
   return `${km}km`;
 }
 
-function formatDistance(meters, rings = getRangeMode().rings) {
-  const km = meters / 1000;
-  if (km <= rings[0]) return `${formatRangeLabel(rings[0])} 內`;
-  if (km <= rings[1]) return `${formatRangeLabel(rings[1])} 內`;
-  if (km <= rings[2]) return `${formatRangeLabel(rings[2])} 內`;
-  return `${formatRangeLabel(rings[2])} 以上`;
-}
-
 function formatTime(ts) {
   if (!ts) return "未更新";
   return new Intl.DateTimeFormat("zh-TW", {
@@ -207,22 +192,7 @@ function renderStatus() {
 
 function renderRadar() {
   const mode = getRangeMode();
-  const visiblePeople = state.status !== "關閉位置" ? samplePeople : [];
-  const angles = [-128, -42, 28, 132];
-  const outerKm = mode.rings[2];
-
-  const blips = visiblePeople.map((person, index) => {
-    const distanceKm = Math.min(person.meters / 1000, outerKm);
-    const radius = Math.max(13, Math.min(39, (distanceKm / outerKm) * 39));
-    const angle = angles[index % angles.length] * Math.PI / 180;
-    const left = 50 + Math.cos(angle) * radius * 0.72;
-    const top = 50 + Math.sin(angle) * radius;
-    return `
-      <span class="radar-blip blip-${index + 1}" style="left:${left}%;top:${top}%">
-        <span>${escapeHtml(person.vehicle)}</span>
-      </span>
-    `;
-  }).join("");
+  const isLocated = Boolean(state.lastLocation && state.status !== "關閉位置");
 
   els.rangeRadar.innerHTML = `
     <span class="radar-ring ring-outer"></span>
@@ -231,9 +201,8 @@ function renderRadar() {
     <span class="ring-label label-inner">${formatRangeLabel(mode.rings[0])}</span>
     <span class="ring-label label-middle">${formatRangeLabel(mode.rings[1])}</span>
     <span class="ring-label label-outer">${formatRangeLabel(mode.rings[2])}</span>
-    <span class="radar-self">我</span>
-    ${blips}
-    <span class="radar-caption">${mode.name}距離圈層示意，非真實方向</span>
+    <span class="radar-self ${isLocated ? "" : "muted"}">${isLocated ? "我" : "未定位"}</span>
+    <span class="radar-caption">${mode.name}距離圈層；真實定位後顯示自己位置</span>
   `;
 }
 
@@ -267,21 +236,20 @@ function renderRallyCards() {
 }
 
 function renderNearby() {
-  const selfVisible = state.status !== "關閉位置" && state.lastLocation;
-  const people = selfVisible ? samplePeople : samplePeople.slice(0, 2);
-  const rings = getRangeMode().rings;
+  if (state.status === "關閉位置") {
+    els.nearbyList.className = "nearby-list empty-state";
+    els.nearbyList.textContent = "位置已關閉，不顯示附近資料。";
+    return;
+  }
 
-  els.nearbyList.innerHTML = people.map((person) => `
-    <article class="nearby-item">
-      <strong>${escapeHtml(person.nickname)}</strong>
-      <div class="meta">
-        <span>${person.vehicle}</span>
-        <span>${person.status}</span>
-        <span>${formatDistance(person.meters, rings)}</span>
-        <span>${person.minutes} 分鐘內更新</span>
-      </div>
-    </article>
-  `).join("");
+  if (!state.lastLocation) {
+    els.nearbyList.className = "nearby-list empty-state";
+    els.nearbyList.textContent = "請先更新定位；正式多人版會在這裡顯示真實附近車友。";
+    return;
+  }
+
+  els.nearbyList.className = "nearby-list empty-state";
+  els.nearbyList.textContent = "目前沒有真實附近車友資料；接上後端後才會顯示約略距離。";
 }
 
 function renderChecklist() {

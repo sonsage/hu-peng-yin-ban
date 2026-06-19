@@ -442,7 +442,6 @@ button,
 
 .radar-ring,
 .radar-self,
-.radar-blip,
 .ring-label,
 .radar-caption {
   position: absolute;
@@ -493,29 +492,10 @@ button,
   box-shadow: 0 8px 22px rgba(37, 111, 201, .24);
 }
 
-.radar-blip {
-  width: 32px;
-  height: 32px;
-  transform: translate(-50%, -50%);
-  border: 3px solid #fff;
-  border-radius: 50%;
-  box-shadow: 0 8px 20px rgba(32, 35, 31, .18);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 800;
+.radar-self.muted {
+  background: linear-gradient(135deg, #8d99aa, #657083);
+  font-size: 12px;
 }
-
-.radar-blip span {
-  transform: scale(.86);
-}
-
-.blip-1 { background: var(--orange); }
-.blip-2 { background: var(--purple); }
-.blip-3 { background: var(--pink); }
-.blip-4 { background: var(--teal); }
 
 .ring-label {
   border-radius: 999px;
@@ -630,6 +610,10 @@ button,
 .nearby-list {
   display: grid;
   gap: 10px;
+}
+
+.nearby-list.empty-state {
+  display: block;
 }
 
 .rally-card,
