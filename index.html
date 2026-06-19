@@ -1,0 +1,245 @@
+﻿<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>呼朋引伴環島趣工具</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <svg class="svg-sprite" aria-hidden="true">
+      <symbol id="i-map" viewBox="0 0 24 24"><path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3-6-3Z"/><path d="M9 3v15"/><path d="M15 6v15"/></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-5.1 7-12A7 7 0 0 0 5 9c0 6.9 7 12 7 12Z"/><circle cx="12" cy="9" r="2.5"/></symbol>
+      <symbol id="i-megaphone" viewBox="0 0 24 24"><path d="M3 11v2a2 2 0 0 0 2 2h3l8 4V5L8 9H5a2 2 0 0 0-2 2Z"/><path d="M8 15v4a2 2 0 0 0 2 2h1"/><path d="M19 8a4 4 0 0 1 0 8"/></symbol>
+      <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+      <symbol id="i-checks" viewBox="0 0 24 24"><path d="m3 12 3 3 6-6"/><path d="m13 12 3 3 6-6"/><path d="M3 19h18"/><path d="M3 5h18"/></symbol>
+      <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-5"/></symbol>
+      <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/><path d="M3 12A9 9 0 0 1 18.5 5.8L21 8"/><path d="M21 3v5h-5"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 15H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></symbol>
+      <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 22V4"/><path d="M5 4h12l-2 5 2 5H5"/></symbol>
+      <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h6"/></symbol>
+      <symbol id="i-scooter" viewBox="0 0 24 24"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M8.5 17h6"/><path d="M14 17l2-8h3"/><path d="M13 9H8l-2 5"/><path d="M16 9h4"/></symbol>
+      <symbol id="i-bike" viewBox="0 0 24 24"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M9 17.5 12 10l3.5 7.5"/><path d="M12 10h4"/><path d="M10 7h3"/><path d="m7 17.5 5-7.5"/></symbol>
+      <symbol id="i-motorcycle" viewBox="0 0 24 24"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M9 17h4l3-6h3"/><path d="M11 11H8l-2 3"/><path d="M13 11l-2-3h3"/><path d="M18 11h3"/></symbol>
+      <symbol id="i-walk" viewBox="0 0 24 24"><circle cx="13" cy="4" r="2"/><path d="M11 22l2-7"/><path d="m16 22-3-7-4-2 2-5"/><path d="m12 8 4 3 3-1"/><path d="m9 13-3 3"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><path d="M12 15v2"/></symbol>
+      <symbol id="i-unlock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.7-1.5"/><path d="M12 15v2"/></symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></symbol>
+    </svg>
+    <main class="app-shell">
+      <section class="panel profile-panel accent-green" aria-labelledby="profile-title">
+        <div class="brand-row">
+          <span class="icon-badge badge-green"><svg class="icon"><use href="#i-map"></use></svg></span>
+          <div>
+            <p class="eyebrow">正式版工具</p>
+            <h1 id="profile-title">呼朋引伴環島趣</h1>
+          </div>
+        </div>
+
+        <form id="profileForm" class="profile-form">
+          <label>
+            <span>暱稱</span>
+            <input id="nickname" name="nickname" maxlength="16" autocomplete="nickname" placeholder="例如：阿哲">
+          </label>
+
+          <fieldset>
+            <legend>移動方式</legend>
+            <div class="segmented four">
+              <label><input type="radio" name="vehicle" value="機車" checked><span><svg class="icon"><use href="#i-scooter"></use></svg>機車</span></label>
+              <label><input type="radio" name="vehicle" value="自行車"><span><svg class="icon"><use href="#i-bike"></use></svg>自行車</span></label>
+              <label><input type="radio" name="vehicle" value="重機"><span><svg class="icon"><use href="#i-motorcycle"></use></svg>重機</span></label>
+              <label><input type="radio" name="vehicle" value="徒步"><span><svg class="icon"><use href="#i-walk"></use></svg>徒步</span></label>
+            </div>
+          </fieldset>
+
+          <button class="primary" type="submit"><svg class="icon"><use href="#i-save"></use></svg>儲存設定</button>
+        </form>
+
+        <div class="notice">
+          <strong>隱私邊界</strong>
+          <p>不收 Email、不做裝置綁定、不做背景定位。定位只在你按下更新時取得，資料存在這台裝置的瀏覽器中。</p>
+          <p>請勿使用真名、電話、Email、車牌或可直接識別身分的文字作為暱稱或補充訊息。</p>
+        </div>
+      </section>
+
+      <section class="panel map-panel accent-blue" aria-labelledby="status-title">
+        <div class="map-visual radar-visual" id="rangeRadar" role="img" aria-label="附近距離圈層示意，非真實方向或精準座標"></div>
+
+        <div class="status-head">
+          <span class="icon-badge badge-blue"><svg class="icon"><use href="#i-pin"></use></svg></span>
+          <div>
+            <p class="eyebrow">目前狀態</p>
+            <h2 id="status-title">只顯示必要資訊</h2>
+          </div>
+          <button class="ghost" id="updateLocation" type="button"><svg class="icon"><use href="#i-refresh"></use></svg>更新定位</button>
+        </div>
+
+        <label class="consent-row">
+          <input id="locationConsent" type="checkbox">
+          <span>我同意僅在本次使用附近功能時取得定位，並了解不會進行背景定位或精準座標公開。</span>
+        </label>
+
+        <div class="segmented status" role="group" aria-label="簽到狀態">
+          <button type="button" data-status="我已出發" class="active">我已出發</button>
+          <button type="button" data-status="休息中">休息中</button>
+          <button type="button" data-status="已抵達">已抵達</button>
+          <button type="button" data-status="需要協助">需要協助</button>
+          <button type="button" data-status="關閉位置">關閉位置</button>
+        </div>
+
+        <div class="location-card">
+          <div>
+            <span class="label">定位狀態</span>
+            <p id="locationStatus">尚未取得定位</p>
+          </div>
+          <span id="lastUpdated">未更新</span>
+        </div>
+        <div class="map-actions">
+          <button class="ghost" id="openGoogleMaps" type="button" disabled><svg class="icon"><use href="#i-map"></use></svg>我的導航</button>
+          <p>只會開啟你的目前位置；附近車友不會提供精準座標。Google Maps 為第三方服務。</p>
+        </div>
+      </section>
+
+      <section class="panel action-panel accent-orange" aria-labelledby="rally-title">
+        <div class="section-head">
+          <span class="icon-badge badge-orange"><svg class="icon"><use href="#i-megaphone"></use></svg></span>
+          <div>
+            <p class="eyebrow">120 分鐘自動過期</p>
+            <h2 id="rally-title">發起附近揪團卡</h2>
+          </div>
+          <span id="activeCardCount" class="counter">0</span>
+        </div>
+
+        <form id="rallyForm" class="rally-form">
+          <label>
+            <span>類型</span>
+            <select id="rallyType">
+              <option>找同騎</option>
+              <option>問路況</option>
+              <option>補給詢問</option>
+              <option>需要協助</option>
+            </select>
+          </label>
+          <label>
+            <span>短文字補充</span>
+            <textarea id="rallyNote" maxlength="60" rows="3" placeholder="最多 60 字，不填電話、真名或 Email"></textarea>
+          </label>
+          <p class="form-warning">揪團卡會在 120 分鐘後自動過期。「需要協助」不等於報案或救援派遣。</p>
+          <button class="primary" type="submit"><svg class="icon"><use href="#i-megaphone"></use></svg>建立 120 分鐘卡片</button>
+        </form>
+
+        <div id="rallyCards" class="card-list empty-state">目前沒有有效卡片</div>
+      </section>
+
+      <section class="panel nearby-panel accent-purple" aria-labelledby="nearby-title">
+        <div class="section-head">
+          <span class="icon-badge badge-purple"><svg class="icon"><use href="#i-users"></use></svg></span>
+          <div>
+            <p class="eyebrow">附近車友</p>
+            <h2 id="nearby-title">約略距離，不顯示精準座標</h2>
+          </div>
+          <button class="ghost" id="refreshNearby" type="button"><svg class="icon"><use href="#i-users"></use></svg>查看附近</button>
+        </div>
+        <div id="nearbyList" class="nearby-list"></div>
+      </section>
+
+      <section class="panel checklist-panel accent-teal" aria-labelledby="checklist-title">
+        <div class="section-head">
+          <span class="icon-badge badge-teal"><svg class="icon"><use href="#i-checks"></use></svg></span>
+          <div>
+            <p class="eyebrow">行前檢核</p>
+            <h2 id="checklist-title">出發前快速確認</h2>
+          </div>
+          <button class="ghost" id="resetChecklist" type="button"><svg class="icon"><use href="#i-refresh"></use></svg>重設</button>
+        </div>
+        <div class="checklist-status" id="checklistStatus">
+          <span>尚未確認檢核</span>
+          <strong>0/0</strong>
+        </div>
+        <div id="checklist" class="checklist"></div>
+        <button class="primary confirm-checklist" id="confirmChecklist" type="button"><svg class="icon"><use href="#i-checks"></use></svg>確認檢核項目</button>
+      </section>
+
+      <section class="panel message-panel accent-pink" aria-labelledby="message-title">
+        <div class="section-head">
+          <span class="icon-badge badge-pink"><svg class="icon"><use href="#i-message"></use></svg></span>
+          <div>
+            <p class="eyebrow">模板訊息</p>
+            <h2 id="message-title">快速傳達需求</h2>
+          </div>
+        </div>
+        <div id="templateMessages" class="template-grid"></div>
+        <label class="short-message">
+          <span>短文字補充</span>
+          <input id="shortMessage" maxlength="40" placeholder="最多 40 字">
+        </label>
+        <button class="primary" id="composeMessage" type="button"><svg class="icon"><use href="#i-message"></use></svg>產生訊息</button>
+        <output id="messageOutput" class="message-output"></output>
+      </section>
+
+      <section class="panel anti-theft-panel accent-yellow" aria-labelledby="anti-theft-title">
+        <div class="section-head">
+          <span class="icon-badge badge-yellow"><svg class="icon"><use href="#i-lock"></use></svg></span>
+          <div>
+            <p class="eyebrow">位置防盜</p>
+            <h2 id="anti-theft-title">停放位置警戒</h2>
+          </div>
+        </div>
+
+        <div class="anti-status" id="antiTheftStatus">
+          <strong id="antiTheftState">尚未啟用</strong>
+          <span id="antiTheftDistance">將目前位置設為停放點後，可檢查是否超出警戒範圍。</span>
+        </div>
+
+        <label class="anti-radius">
+          <span>警戒半徑</span>
+          <select id="antiTheftRadius">
+            <option value="50">50 公尺</option>
+            <option value="100" selected>100 公尺</option>
+            <option value="200">200 公尺</option>
+            <option value="500">500 公尺</option>
+          </select>
+        </label>
+
+        <div class="anti-actions">
+          <button class="primary" id="enableAntiTheft" type="button"><svg class="icon"><use href="#i-lock"></use></svg>設定停放點</button>
+          <button class="ghost" id="checkAntiTheft" type="button"><svg class="icon"><use href="#i-bell"></use></svg>檢查目前位置</button>
+          <button class="ghost" id="disableAntiTheft" type="button"><svg class="icon"><use href="#i-unlock"></use></svg>解除警戒</button>
+        </div>
+
+        <p class="form-warning">位置防盜需允許定位並手動檢查；本工具不是專業防盜器、報案或救援服務。</p>
+      </section>
+
+      <section class="panel safety-panel accent-red" aria-labelledby="safety-title">
+        <span class="icon-badge badge-red"><svg class="icon"><use href="#i-shield"></use></svg></span>
+        <p class="eyebrow">安全與資料</p>
+        <h2 id="safety-title">使用者控制</h2>
+        <p class="developer-info">開發者：正衡調查與風險控管顧問有限公司<br><a href="https://www.oirgc.com.tw/" target="_blank" rel="noopener noreferrer">https://www.oirgc.com.tw/</a></p>
+        <div class="usage-counter" aria-live="polite">
+          <span>公開工具使用人次</span>
+          <strong id="usageCount">讀取中</strong>
+          <p>正式部署後開始統計；僅累計開啟次數，不記錄個資、定位或 IP。</p>
+        </div>
+        <p>「需要協助」不是緊急救援服務，平台不保證有人回覆、抵達或提供救援。危急狀況請直接撥打 110 或 119。</p>
+        <ul class="legal-list">
+          <li>本工具僅供附近互助與行前提醒，不提供醫療、道路救援、交通管制或安全保證。</li>
+          <li>使用者自行判斷路況與自身能力，並應遵守交通規則與現場指示。</li>
+          <li>請勿發布個資、騷擾、歧視、違法、危險邀約或誤導救援資訊。</li>
+          <li>你可以隨時關閉位置或刪除本機資料。</li>
+        </ul>
+        <div class="safety-actions">
+          <button class="danger" id="deleteData" type="button"><svg class="icon"><use href="#i-trash"></use></svg>刪除我的資料</button>
+          <button class="ghost" id="reportAbuse" type="button"><svg class="icon"><use href="#i-flag"></use></svg>檢舉濫用</button>
+          <a class="link-button" href="legal-notice.html"><svg class="icon"><use href="#i-shield"></use></svg>服務與隱私告知</a>
+          <a class="link-button" href="README.md"><svg class="icon"><use href="#i-file"></use></svg>工具說明</a>
+        </div>
+        <p class="copyright">© 2026 正衡調查與風險控管顧問有限公司。保留所有權利。</p>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
+
