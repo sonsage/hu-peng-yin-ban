@@ -306,9 +306,11 @@ async function recordUsage() {
     const response = await fetch("/api/usage/visit", { method: "POST" });
     if (!response.ok) throw new Error("usage failed");
     const data = await response.json();
-    els.usageCount.textContent = `${Number(data.visits || 0).toLocaleString("zh-TW")} 次`;
+    els.usageCount.textContent = data.configured === false
+      ? "統計尚未綁定"
+      : `${Number(data.visits || 0).toLocaleString("zh-TW")} 次`;
   } catch {
-    els.usageCount.textContent = "本機統計未啟用";
+    els.usageCount.textContent = "統計尚未啟用";
   }
 }
 
