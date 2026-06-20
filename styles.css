@@ -105,28 +105,70 @@ a {
 .accent-yellow { --accent: linear-gradient(90deg, var(--yellow), var(--orange)); }
 
 .icon-badge {
-  width: 42px;
-  height: 42px;
-  border-radius: 8px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  box-shadow: 0 10px 24px rgba(36, 47, 66, .16);
+  box-shadow:
+    inset 0 0 0 3px rgba(255, 255, 255, .3),
+    0 12px 24px rgba(36, 47, 66, .18);
 }
 
-.badge-green { background: linear-gradient(135deg, var(--green), var(--teal)); }
-.badge-blue { background: linear-gradient(135deg, var(--blue), #3ab0d4); }
-.badge-orange { background: linear-gradient(135deg, var(--orange), var(--yellow)); }
-.badge-purple { background: linear-gradient(135deg, var(--purple), var(--blue)); }
-.badge-teal { background: linear-gradient(135deg, var(--teal), #44b27f); }
-.badge-pink { background: linear-gradient(135deg, var(--pink), #dc7a55); }
-.badge-red { background: linear-gradient(135deg, var(--red), var(--pink)); }
-.badge-yellow { background: linear-gradient(135deg, var(--yellow), var(--orange)); }
+.badge-green {
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, .55), transparent 20%),
+    linear-gradient(135deg, #24a06f, #178b9a);
+}
+
+.badge-blue {
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, .55), transparent 20%),
+    linear-gradient(135deg, #2b7de1, #24b8d8);
+}
+
+.badge-orange {
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, .55), transparent 20%),
+    linear-gradient(135deg, #e06f25, #efbd3e);
+}
+
+.badge-purple {
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, .55), transparent 20%),
+    linear-gradient(135deg, #7a55d8, #3377d8);
+}
+
+.badge-teal {
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, .55), transparent 20%),
+    linear-gradient(135deg, #13a0a3, #45b976);
+}
+
+.badge-pink {
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, .55), transparent 20%),
+    linear-gradient(135deg, #d44d8b, #e27b55);
+}
+
+.badge-red {
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, .5), transparent 20%),
+    linear-gradient(135deg, #c94e45, #c94d82);
+}
+
+.badge-yellow {
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, .58), transparent 20%),
+    linear-gradient(135deg, #e8ad28, #d96f21);
+}
 
 .icon-badge .icon {
-  width: 22px;
-  height: 22px;
+  width: 25px;
+  height: 25px;
+  filter: drop-shadow(0 2px 3px rgba(32, 35, 31, .2));
 }
 
 .profile-panel,
