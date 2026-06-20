@@ -796,13 +796,85 @@ button,
 }
 
 @media (max-width: 720px) {
-  .app-shell {
-    grid-template-columns: 1fr;
+  .app-shell:not(.legal-page) {
+    width: 100%;
+    height: 100dvh;
+    margin: 0;
+    padding: 12px;
+    display: flex;
+    grid-template-columns: none;
+    gap: 12px;
+    align-items: stretch;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-padding: 12px;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-shell:not(.legal-page)::after {
+    content: "";
+    flex: 0 0 1px;
+  }
+
+  .app-shell:not(.legal-page)::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .app-shell:not(.legal-page)::-webkit-scrollbar-thumb {
+    background: rgba(101, 112, 131, .32);
+    border-radius: 999px;
+  }
+
+  .app-shell:not(.legal-page) .panel {
+    flex: 0 0 calc(100vw - 24px);
+    max-width: 640px;
+    max-height: calc(100dvh - 24px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .legal-page {
     padding: 12px;
   }
 
   .map-panel {
     grid-column: auto;
+  }
+
+  .profile-panel {
+    order: 0;
+  }
+
+  .map-panel {
+    order: 1;
+  }
+
+  .action-panel {
+    order: 2;
+  }
+
+  .nearby-panel {
+    order: 3;
+  }
+
+  .checklist-panel {
+    order: 4;
+  }
+
+  .message-panel {
+    order: 5;
+  }
+
+  .anti-theft-panel {
+    order: 6;
+  }
+
+  .safety-panel {
+    order: 7;
   }
 
   .segmented.four,
