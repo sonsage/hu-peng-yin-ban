@@ -340,19 +340,24 @@ function renderNearby() {
   if (state.status === "關閉位置") {
     els.nearbyList.className = "nearby-list empty-state";
     els.nearbyList.textContent = "位置已關閉，不會更新或顯示附近使用者。";
-    state.nearbyPeople = [];
+    clearNearbyPeople();
     return;
   }
 
   if (!state.lastLocation) {
     els.nearbyList.className = "nearby-list empty-state";
     els.nearbyList.textContent = "請先勾選定位同意並更新定位，才能查看附近使用者。";
-    state.nearbyPeople = [];
+    clearNearbyPeople();
     return;
   }
 
   els.nearbyList.className = "nearby-list empty-state";
   els.nearbyList.textContent = "已取得你的定位；按「檢查狀態」更新附近列表。";
+}
+
+function clearNearbyPeople() {
+  state.nearbyPeople = [];
+  renderRadar();
 }
 
 function renderNearbyPeople(people) {
@@ -509,11 +514,13 @@ function handleRefreshNearby() {
   if (!els.locationConsent.checked) {
     els.locationConsent.focus();
     renderNearby();
+    clearNearbyPeople();
     els.messageOutput.textContent = "請先勾選定位同意，再查看附近使用者。";
     return;
   }
 
   if (!state.lastLocation) {
+    clearNearbyPeople();
     els.messageOutput.textContent = "正在取得本次定位，完成後請再按一次檢查狀態。";
     updateLocation();
     return;
@@ -552,6 +559,7 @@ async function refreshNearbyPeople() {
     await refreshSharedCards(false);
     els.messageOutput.textContent = `附近列表、揪團卡與卡片回覆已更新；你的約略位置會保留 ${data.ttlMinutes || NEARBY_TTL_MINUTES} 分鐘。`;
   } catch {
+    clearNearbyPeople();
     els.messageOutput.textContent = "附近功能暫時無法連線，請稍後再試。";
   }
 }
