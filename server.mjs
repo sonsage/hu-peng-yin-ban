@@ -7,6 +7,7 @@ const port = Number(process.env.PORT || 5173);
 const usagePath = join(root, "usage.json");
 const nearbyPath = join(root, "nearby-users.json");
 const cardsPath = join(root, "nearby-cards.json");
+const repliesPath = join(root, "card-replies.json");
 const nearbyTtlMs = 30 * 60 * 1000;
 const cardTtlMs = 120 * 60 * 1000;
 const allowedVehicles = new Set(["機車", "自行車", "重機", "徒步"]);
@@ -89,6 +90,7 @@ createServer(async (request, response) => {
         lng: url.searchParams.get("lng"),
         radiusKm: url.searchParams.get("radiusKm"),
       });
+      const viewerId = normalizeId(url.searchParams.get("viewerId"));
       if (!viewer) {
         sendJson(response, { error: "invalid_location" }, 400);
         return;
@@ -96,7 +98,10 @@ createServer(async (request, response) => {
 
       const now = Date.now();
       const active = (await readSharedCards()).filter((card) => isActiveCard(card, now));
+      const activeIds = new Set(active.map((card) => card.id));
+      const replies = (await readSharedReplies()).filter((reply) => isActiveReply(reply, now, activeIds));
       await writeFile(cardsPath, `${JSON.stringify(active, null, 2)}\n`, "utf8");
+      await writeFile(repliesPath, `${JSON.stringify(replies, null, 2)}\n`, "utf8");
       const cards = active
         .map((card) => ({
           id: card.id,
@@ -109,11 +114,57 @@ createServer(async (request, response) => {
           bearingDegrees: quantizeBearing(bearingDegrees(viewer, card)),
           createdAt: card.createdAt,
           expiresAt: card.expiresAt,
+          replies: replies
+            .filter((reply) => reply.cardId === card.id)
+            .filter((reply) => card.ownerId === viewerId || reply.ownerId === viewerId)
+            .map((reply) => ({
+              id: reply.id,
+              nickname: reply.nickname,
+              vehicle: reply.vehicle,
+              message: reply.message,
+              distanceMeters: Math.round(distanceMeters(viewer, reply) / 100) * 100,
+              createdAt: reply.createdAt,
+            })),
         }))
         .filter((card) => card.distanceMeters <= viewer.radiusKm * 1000)
         .sort((a, b) => a.expiresAt - b.expiresAt)
         .slice(0, 50);
       sendJson(response, { configured: true, ttlMinutes: Math.round(cardTtlMs / 60000), cards });
+      return;
+    }
+
+    if (url.pathname === "/api/cards/reply" && request.method === "POST") {
+      const payload = await readJsonBody(request);
+      const reply = normalizeSharedReply(payload);
+      if (!reply) {
+        sendJson(response, { error: "invalid_payload" }, 400);
+        return;
+      }
+
+      const now = Date.now();
+      const cards = (await readSharedCards()).filter((card) => isActiveCard(card, now));
+      const target = cards.find((card) => card.id === reply.cardId);
+      if (!target) {
+        sendJson(response, { error: "card_not_found" }, 404);
+        return;
+      }
+
+      if (target.ownerId === reply.ownerId) {
+        sendJson(response, { error: "cannot_reply_self" }, 400);
+        return;
+      }
+
+      const activeIds = new Set(cards.map((card) => card.id));
+      const replies = (await readSharedReplies()).filter((item) => isActiveReply(item, now, activeIds));
+      replies.unshift({
+        ...reply,
+        id: createId("reply"),
+        targetOwnerId: target.ownerId,
+        createdAt: now,
+        expiresAt: Math.min(target.expiresAt, now + cardTtlMs),
+      });
+      await writeFile(repliesPath, `${JSON.stringify(replies.slice(0, 200), null, 2)}\n`, "utf8");
+      sendJson(response, { configured: true });
       return;
     }
 
@@ -248,6 +299,16 @@ async function readSharedCards() {
   }
 }
 
+async function readSharedReplies() {
+  try {
+    const raw = await readFile(repliesPath, "utf8");
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 function normalizeSharedCard(payload) {
   const location = normalizeSharedLocation(payload?.location);
   const ownerId = normalizeId(payload?.ownerId);
@@ -259,6 +320,24 @@ function normalizeSharedCard(payload) {
     vehicle: allowedVehicles.has(payload.vehicle) ? payload.vehicle : "機車",
     type: allowedCardTypes.has(payload.type) ? payload.type : "模板訊息",
     note: sanitizeNearbyText(payload.note || "", 80),
+    lat: location.lat,
+    lng: location.lng,
+  };
+}
+
+function normalizeSharedReply(payload) {
+  const location = normalizeSharedLocation(payload?.location);
+  const cardId = String(payload?.cardId || "").slice(0, 80);
+  const ownerId = normalizeId(payload?.ownerId);
+  const message = sanitizeNearbyText(payload.message || "", 80);
+  if (!location || !cardId || !ownerId || !message) return null;
+
+  return {
+    cardId,
+    ownerId,
+    nickname: sanitizeNearbyText(payload.nickname || "匿名", 16) || "匿名",
+    vehicle: allowedVehicles.has(payload.vehicle) ? payload.vehicle : "機車",
+    message,
     lat: location.lat,
     lng: location.lng,
   };
@@ -304,6 +383,17 @@ function isActiveCard(card, now) {
     && Number.isFinite(card.lat)
     && Number.isFinite(card.lng)
     && Number(card.expiresAt || 0) > now;
+}
+
+function isActiveReply(reply, now, activeCardIds) {
+  return reply
+    && typeof reply.id === "string"
+    && typeof reply.cardId === "string"
+    && activeCardIds.has(reply.cardId)
+    && typeof reply.ownerId === "string"
+    && Number.isFinite(reply.lat)
+    && Number.isFinite(reply.lng)
+    && Number(reply.expiresAt || 0) > now;
 }
 
 function createId(prefix) {

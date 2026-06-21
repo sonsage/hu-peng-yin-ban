@@ -1,4 +1,5 @@
 const CARDS_KEY = "nearby-cards";
+const REPLIES_KEY = "card-replies";
 const CARD_TTL_MS = 120 * 60 * 1000;
 const MAX_CARDS = 50;
 const ALLOWED_VEHICLES = new Set(["機車", "自行車", "重機", "徒步"]);
@@ -13,11 +14,15 @@ export async function onRequestGet({ request, env }) {
     lng: url.searchParams.get("lng"),
     radiusKm: url.searchParams.get("radiusKm"),
   });
+  const viewerId = normalizeId(url.searchParams.get("viewerId"));
   if (!viewer) return json({ error: "invalid_location" }, 400);
 
   const now = Date.now();
   const active = (await readCards(env)).filter((card) => isActive(card, now));
+  const activeIds = new Set(active.map((card) => card.id));
+  const replies = (await readReplies(env)).filter((reply) => isActiveReply(reply, now, activeIds));
   await env.USAGE_KV.put(CARDS_KEY, JSON.stringify(active));
+  await env.USAGE_KV.put(REPLIES_KEY, JSON.stringify(replies));
 
   const cards = active
     .map((card) => ({
@@ -31,6 +36,17 @@ export async function onRequestGet({ request, env }) {
       bearingDegrees: quantizeBearing(bearingDegrees(viewer, card)),
       createdAt: card.createdAt,
       expiresAt: card.expiresAt,
+      replies: replies
+        .filter((reply) => reply.cardId === card.id)
+        .filter((reply) => card.ownerId === viewerId || reply.ownerId === viewerId)
+        .map((reply) => ({
+          id: reply.id,
+          nickname: reply.nickname,
+          vehicle: reply.vehicle,
+          message: reply.message,
+          distanceMeters: Math.round(distanceMeters(viewer, reply) / 100) * 100,
+          createdAt: reply.createdAt,
+        })),
     }))
     .filter((card) => card.distanceMeters <= viewer.radiusKm * 1000)
     .sort((a, b) => a.expiresAt - b.expiresAt)
@@ -100,6 +116,18 @@ async function readCards(env) {
   }
 }
 
+async function readReplies(env) {
+  const raw = await env.USAGE_KV.get(REPLIES_KEY);
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 function normalizeCard(payload) {
   const location = normalizeLocation(payload?.location);
   const ownerId = normalizeId(payload?.ownerId);
@@ -151,6 +179,17 @@ function isActive(card, now) {
     && Number.isFinite(card.lat)
     && Number.isFinite(card.lng)
     && Number(card.expiresAt || 0) > now;
+}
+
+function isActiveReply(reply, now, activeCardIds) {
+  return reply
+    && typeof reply.id === "string"
+    && typeof reply.cardId === "string"
+    && activeCardIds.has(reply.cardId)
+    && typeof reply.ownerId === "string"
+    && Number.isFinite(reply.lat)
+    && Number.isFinite(reply.lng)
+    && Number(reply.expiresAt || 0) > now;
 }
 
 function distanceMeters(from, to) {

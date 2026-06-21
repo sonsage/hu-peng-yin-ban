@@ -272,7 +272,11 @@ function renderRallyCards() {
           <button class="icon-action danger" type="button" data-delete-card="${escapeAttr(card.id)}" aria-label="刪除 ${escapeAttr(card.type)} 卡片">
             <svg class="icon"><use href="#i-trash"></use></svg>
           </button>
-        ` : ""}
+        ` : `
+          <button class="ghost small-action" type="button" data-reply-card="${escapeAttr(card.id)}">
+            回覆
+          </button>
+        `}
       </div>
       <p>${escapeHtml(card.note || "無補充文字")}</p>
       <div class="meta">
@@ -281,6 +285,17 @@ function renderRallyCards() {
         ${Number.isFinite(card.distanceMeters) ? `<span>${formatDistance(card.distanceMeters)}</span>` : ""}
         <span>剩 ${minutesLeft(card.expiresAt)} 分鐘</span>
       </div>
+      ${Array.isArray(card.replies) && card.replies.length ? `
+        <div class="card-replies">
+          <strong>收到回覆</strong>
+          ${card.replies.map((reply) => `
+            <p>
+              <span>${escapeHtml(reply.nickname || "匿名")}｜${escapeHtml(reply.vehicle || "未設定")}｜${formatDistance(Number(reply.distanceMeters))}</span>
+              ${escapeHtml(reply.message || "")}
+            </p>
+          `).join("")}
+        </div>
+      ` : ""}
     </article>
   `).join("");
 }
@@ -499,7 +514,7 @@ async function refreshNearbyPeople() {
 
     renderNearbyPeople(Array.isArray(data.people) ? data.people : []);
     await refreshSharedCards(false);
-    els.messageOutput.textContent = `附近列表已更新；你的約略位置會保留 ${data.ttlMinutes || NEARBY_TTL_MINUTES} 分鐘。`;
+    els.messageOutput.textContent = `附近列表、揪團卡與卡片回覆已更新；你的約略位置會保留 ${data.ttlMinutes || NEARBY_TTL_MINUTES} 分鐘。`;
   } catch {
     els.messageOutput.textContent = "附近功能暫時無法連線，請稍後再試。";
   }
@@ -515,6 +530,7 @@ async function refreshSharedCards(showMessage = true) {
   try {
     const mode = getRangeMode();
     const params = new URLSearchParams({
+      viewerId: state.profile.id,
       lat: String(state.lastLocation.lat),
       lng: String(state.lastLocation.lng),
       radiusKm: String(mode.rings[mode.rings.length - 1]),
@@ -575,6 +591,42 @@ async function deleteSharedCard(cardId) {
     els.messageOutput.textContent = "已刪除公開卡片。";
   } catch {
     els.messageOutput.textContent = "刪除公開卡片失敗，請稍後再試。";
+  }
+}
+
+async function replySharedCard(cardId) {
+  if (!state.lastLocation || state.status === "關閉位置") {
+    els.messageOutput.textContent = "請先開啟位置並更新定位，才能回覆卡片。";
+    return;
+  }
+
+  const message = window.prompt("回覆這張卡片（最多 60 字，不填電話、真名或 Email）", "我在附近，可以協助確認。");
+  if (message === null) return;
+
+  const trimmed = message.trim().slice(0, 60);
+  if (!trimmed) {
+    els.messageOutput.textContent = "回覆內容不可空白。";
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/cards/reply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        cardId,
+        ownerId: state.profile.id,
+        nickname: state.profile.nickname || "匿名",
+        vehicle: state.profile.vehicle,
+        message: trimmed,
+        location: state.lastLocation,
+      }),
+    });
+    if (!response.ok) throw new Error("reply_failed");
+    await refreshSharedCards(false);
+    els.messageOutput.textContent = "已送出卡片回覆；發起人檢查狀態後會看到。";
+  } catch {
+    els.messageOutput.textContent = "回覆失敗，請稍後再試。";
   }
 }
 
@@ -700,6 +752,12 @@ els.rallyForm.addEventListener("submit", async (event) => {
 });
 
 els.rallyCards.addEventListener("click", async (event) => {
+  const replyButton = event.target.closest("[data-reply-card]");
+  if (replyButton) {
+    await replySharedCard(replyButton.dataset.replyCard);
+    return;
+  }
+
   const button = event.target.closest("[data-delete-card]");
   if (!button) return;
 

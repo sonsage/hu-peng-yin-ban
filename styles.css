@@ -758,6 +758,42 @@ button,
   margin-bottom: 0;
 }
 
+.small-action {
+  padding: 7px 10px;
+  min-height: auto;
+  font-size: 13px;
+}
+
+.card-replies {
+  margin-top: 12px;
+  border-top: 1px dashed var(--line);
+  padding-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.card-replies strong {
+  color: var(--green-dark);
+  font-size: 13px;
+}
+
+.card-replies p {
+  margin: 0;
+  border-radius: 8px;
+  background: rgba(19, 133, 142, .07);
+  padding: 9px 10px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.card-replies p span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .icon-action {
   width: 34px;
   min-height: 34px;
