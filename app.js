@@ -1,6 +1,7 @@
 const STORAGE_KEY = "hu-peng-yin-ban-tool";
 const LEGACY_STORAGE_KEY = "road-help-mvp";
 const CARD_TTL_MS = 120 * 60 * 1000;
+const NEARBY_TTL_MINUTES = 30;
 
 const defaultState = {
   profile: {
@@ -90,6 +91,8 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
     if (!raw) return cloneDefaultState();
     const nextState = { ...cloneDefaultState(), ...JSON.parse(raw) };
+    nextState.profile = { ...cloneDefaultState().profile, ...nextState.profile };
+    if (!nextState.profile.id) nextState.profile.id = createId("local");
     localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
     localStorage.removeItem(LEGACY_STORAGE_KEY);
     return nextState;
@@ -143,6 +146,12 @@ function formatTime(ts) {
   }).format(new Date(ts));
 }
 
+function formatDistance(meters) {
+  if (!Number.isFinite(meters)) return "距離未知";
+  if (meters < 1000) return `約 ${Math.max(100, Math.round(meters / 100) * 100)} 公尺`;
+  return `約 ${(meters / 1000).toFixed(meters < 10000 ? 1 : 0)} 公里`;
+}
+
 function distanceMeters(from, to) {
   const radius = 6371000;
   const lat1 = from.lat * Math.PI / 180;
@@ -177,7 +186,7 @@ function renderStatus() {
   });
 
   if (state.status === "關閉位置") {
-    els.locationStatus.textContent = "位置已關閉，不會出現在附近車友中";
+    els.locationStatus.textContent = "位置已關閉，不會出現在附近使用者列表中";
   } else if (state.lastLocation) {
     els.locationStatus.textContent = "已取得使用中定位，僅用於約略距離";
   } else {
@@ -238,18 +247,36 @@ function renderRallyCards() {
 function renderNearby() {
   if (state.status === "關閉位置") {
     els.nearbyList.className = "nearby-list empty-state";
-    els.nearbyList.textContent = "位置已關閉，不顯示附近資料。";
+    els.nearbyList.textContent = "位置已關閉，不會更新或顯示附近使用者。";
     return;
   }
 
   if (!state.lastLocation) {
     els.nearbyList.className = "nearby-list empty-state";
-    els.nearbyList.textContent = "請先更新定位；正式多人版會在這裡顯示真實附近車友。";
+    els.nearbyList.textContent = "請先勾選定位同意並更新定位，才能查看附近使用者。";
     return;
   }
 
   els.nearbyList.className = "nearby-list empty-state";
-  els.nearbyList.textContent = "目前沒有真實附近車友資料；接上後端後才會顯示約略距離。";
+  els.nearbyList.textContent = "已取得你的定位；按「檢查狀態」更新附近列表。";
+}
+
+function renderNearbyPeople(people) {
+  if (!people.length) {
+    const rings = getRangeMode().rings;
+    els.nearbyList.className = "nearby-list empty-state";
+    els.nearbyList.textContent = `目前 ${rings[rings.length - 1]} 公里內沒有其他 ${NEARBY_TTL_MINUTES} 分鐘內更新的使用者。`;
+    return;
+  }
+
+  els.nearbyList.className = "nearby-list";
+  els.nearbyList.innerHTML = people.map((person) => `
+    <article class="nearby-item">
+      <strong>${escapeHtml(person.nickname || "匿名")}</strong>
+      <span>${escapeHtml(person.vehicle || "未設定")}｜${escapeHtml(person.status || "未更新")}</span>
+      <span>${formatDistance(Number(person.distanceMeters))}｜更新 ${formatTime(person.updatedAt)}</span>
+    </article>
+  `).join("");
 }
 
 function renderChecklist() {
@@ -374,6 +401,62 @@ function updateLocation() {
   );
 }
 
+function handleRefreshNearby() {
+  if (state.status === "關閉位置") {
+    renderNearby();
+    els.messageOutput.textContent = "位置已關閉，不會更新附近列表。";
+    return;
+  }
+
+  if (!els.locationConsent.checked) {
+    els.locationConsent.focus();
+    renderNearby();
+    els.messageOutput.textContent = "請先勾選定位同意，再查看附近使用者。";
+    return;
+  }
+
+  if (!state.lastLocation) {
+    els.messageOutput.textContent = "正在取得本次定位，完成後請再按一次檢查狀態。";
+    updateLocation();
+    return;
+  }
+
+  refreshNearbyPeople();
+}
+
+async function refreshNearbyPeople() {
+  els.messageOutput.textContent = "正在更新附近使用者列表...";
+
+  try {
+    const mode = getRangeMode();
+    const response = await fetch("/api/nearby", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: state.profile.id,
+        nickname: state.profile.nickname || "匿名",
+        vehicle: state.profile.vehicle,
+        status: state.status,
+        radiusKm: mode.rings[mode.rings.length - 1],
+        location: state.lastLocation,
+      }),
+    });
+
+    if (!response.ok) throw new Error("nearby_failed");
+
+    const data = await response.json();
+    if (!data.configured) {
+      els.messageOutput.textContent = "附近功能尚未綁定後端資料庫。";
+      return;
+    }
+
+    renderNearbyPeople(Array.isArray(data.people) ? data.people : []);
+    els.messageOutput.textContent = `附近列表已更新；你的約略位置會保留 ${data.ttlMinutes || NEARBY_TTL_MINUTES} 分鐘。`;
+  } catch {
+    els.messageOutput.textContent = "附近功能暫時無法連線，請稍後再試。";
+  }
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -426,7 +509,7 @@ els.openGoogleMaps.addEventListener("click", () => {
   const { lat, lng } = state.lastLocation;
   window.open(`https://www.google.com/maps?q=${lat},${lng}`, "_blank", "noopener,noreferrer");
 });
-els.refreshNearby.addEventListener("click", renderNearby);
+els.refreshNearby.addEventListener("click", handleRefreshNearby);
 els.antiTheftRadius.addEventListener("change", () => {
   state.antiTheft.radius = Number(els.antiTheftRadius.value);
   saveState();
@@ -484,7 +567,7 @@ els.disableAntiTheft.addEventListener("click", () => {
 els.rallyForm.addEventListener("submit", (event) => {
   event.preventDefault();
   if (state.status === "關閉位置") {
-    els.messageOutput.textContent = "位置已關閉時仍可建立卡片，但附近車友不會看到你的定位。";
+    els.messageOutput.textContent = "位置已關閉時仍可建立卡片，但附近使用者列表不會更新你的定位。";
   }
 
   state.rallyCards.unshift({

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>呼朋引伴環島趣工具</title>
+    <title>呼朋引伴繞境環島趣工具</title>
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
@@ -34,7 +34,7 @@
           <span class="icon-badge badge-green"><svg class="icon"><use href="#i-map"></use></svg></span>
           <div>
             <p class="eyebrow">正式版工具</p>
-            <h1 id="profile-title">呼朋引伴環島趣</h1>
+            <h1 id="profile-title">呼朋引伴繞境環島趣</h1>
           </div>
         </div>
 
@@ -65,7 +65,7 @@
       </section>
 
       <section class="panel map-panel accent-blue" aria-labelledby="status-title">
-        <div class="map-visual radar-visual" id="rangeRadar" role="img" aria-label="定位距離圈層，未接後端前不顯示車友位置"></div>
+        <div class="map-visual radar-visual" id="rangeRadar" role="img" aria-label="定位距離圈層，附近列表只顯示約略距離"></div>
 
         <div class="status-head">
           <span class="icon-badge badge-blue"><svg class="icon"><use href="#i-pin"></use></svg></span>
@@ -98,7 +98,7 @@
         </div>
         <div class="map-actions">
           <button class="ghost" id="openGoogleMaps" type="button" disabled><svg class="icon"><use href="#i-map"></use></svg>我的導航</button>
-          <p>只會開啟你的目前位置；附近車友不會提供精準座標。Google Maps 為第三方服務。</p>
+          <p>只會開啟你的目前位置；附近列表不會提供他人精準座標。Google Maps 為第三方服務。</p>
         </div>
       </section>
 
@@ -137,10 +137,10 @@
         <div class="section-head">
           <span class="icon-badge badge-purple"><svg class="icon"><use href="#i-users"></use></svg></span>
           <div>
-            <p class="eyebrow">附近車友</p>
-            <h2 id="nearby-title">約略距離，不顯示精準座標</h2>
+            <p class="eyebrow">附近使用者</p>
+            <h2 id="nearby-title">匿名列表，只顯示約略距離</h2>
           </div>
-          <button class="ghost" id="refreshNearby" type="button"><svg class="icon"><use href="#i-users"></use></svg>查看附近</button>
+          <button class="ghost" id="refreshNearby" type="button"><svg class="icon"><use href="#i-users"></use></svg>檢查狀態</button>
         </div>
         <div id="nearbyList" class="nearby-list"></div>
       </section>
@@ -225,6 +225,7 @@
         <p>「需要協助」不是緊急救援服務，平台不保證有人回覆、抵達或提供救援。危急狀況請直接撥打 110 或 119。</p>
         <ul class="legal-list">
           <li>本工具僅供附近互助與行前提醒，不提供醫療、道路救援、交通管制或安全保證。</li>
+          <li>附近功能會短暫保存匿名 ID、暱稱、車種、狀態與約略座標；30 分鐘未更新即不顯示。</li>
           <li>使用者自行判斷路況與自身能力，並應遵守交通規則與現場指示。</li>
           <li>請勿發布個資、騷擾、歧視、違法、危險邀約或誤導救援資訊。</li>
           <li>你可以隨時關閉位置或刪除本機資料。</li>
