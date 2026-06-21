@@ -281,7 +281,8 @@ function renderRadar() {
     const distance = Math.min(Number(marker.distanceMeters || 0), maxDistance);
     const bearing = Number(marker.bearingDegrees || 0);
     const rawRadius = 43 * Math.min(1, distance / maxDistance);
-    const radiusPercent = distance > 0 ? Math.max(11, rawRadius) : 11;
+    const minimumRadius = marker.markerType === "card" ? 17 : 13;
+    const radiusPercent = distance > 0 ? Math.max(minimumRadius, rawRadius) : minimumRadius;
     const angle = (bearing - 90) * Math.PI / 180;
     const left = 50 + Math.cos(angle) * radiusPercent;
     const top = 50 + Math.sin(angle) * radiusPercent;
@@ -307,7 +308,7 @@ function renderRadar() {
     <span class="ring-label label-outer">${formatRangeLabel(mode.rings[2])}</span>
     ${radarMarkers}
     <span class="radar-self ${isLocated ? "" : "muted"}">${isLocated ? escapeHtml(selfLabel) : "未定位"}</span>
-    <span class="radar-caption">${markers.length ? `附近 ${people.length} 人、${cards.length} 卡；約略方位非精準座標` : `${mode.name}距離圈層；檢查狀態後顯示附近人與卡`}</span>
+    <span class="radar-caption">${markers.length ? `附近 ${people.length} 人、${cards.length} 張有效卡；人看 30 分鐘，卡片看 120 分鐘` : `${mode.name}距離圈層；檢查狀態後顯示附近人與卡`}</span>
   `;
 }
 
@@ -342,7 +343,7 @@ function renderRallyCards() {
         <span>${escapeHtml(card.nickname || "匿名")}</span>
         <span>${escapeHtml(card.vehicle || "未設定")}</span>
         ${Number.isFinite(card.distanceMeters) ? `<span>${formatDistance(card.distanceMeters)}</span>` : ""}
-        <span>剩 ${minutesLeft(card.expiresAt)} 分鐘</span>
+        <span>卡片剩 ${minutesLeft(card.expiresAt)} 分鐘</span>
       </div>
       ${Array.isArray(card.replies) && card.replies.length ? `
         <div class="card-replies">
@@ -410,8 +411,11 @@ function renderNearbyPeople(people) {
 
   if (!people.length) {
     const rings = getRangeMode().rings;
+    const cardCount = state.rallyCards.length;
     els.nearbyList.className = "nearby-list empty-state";
-    els.nearbyList.textContent = `目前 ${rings[rings.length - 1]} 公里內沒有其他 ${NEARBY_TTL_MINUTES} 分鐘內更新的使用者。`;
+    els.nearbyList.textContent = cardCount
+      ? `目前 ${rings[rings.length - 1]} 公里內沒有其他 ${NEARBY_TTL_MINUTES} 分鐘內更新的使用者；仍有 ${cardCount} 張 120 分鐘內有效卡片。`
+      : `目前 ${rings[rings.length - 1]} 公里內沒有其他 ${NEARBY_TTL_MINUTES} 分鐘內更新的使用者。`;
     return;
   }
 
@@ -601,8 +605,10 @@ async function refreshNearbyPeople() {
       return;
     }
 
-    renderNearbyPeople(Array.isArray(data.people) ? data.people : []);
+    const people = Array.isArray(data.people) ? data.people : [];
+    state.nearbyPeople = people;
     await refreshSharedCards(false);
+    renderNearbyPeople(people);
     els.messageOutput.textContent = `附近列表、揪團卡與卡片回覆已更新；你的約略位置會保留 ${data.ttlMinutes || NEARBY_TTL_MINUTES} 分鐘。`;
   } catch {
     clearLiveNearbyData();
