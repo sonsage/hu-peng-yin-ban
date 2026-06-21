@@ -568,6 +568,16 @@ button,
 .radar-person.person-2 { background: var(--pink); }
 .radar-person.person-3 { background: var(--teal); }
 
+.radar-card-marker {
+  border-radius: 10px;
+  outline: 2px solid rgba(255, 255, 255, .7);
+  outline-offset: 3px;
+}
+
+.radar-card-marker::after {
+  border-style: solid;
+}
+
 .ring-label {
   border-radius: 999px;
   padding: 4px 8px;
