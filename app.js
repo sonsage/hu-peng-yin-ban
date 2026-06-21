@@ -3,7 +3,7 @@ const LEGACY_STORAGE_KEY = "road-help-mvp";
 const CARD_TTL_MS = 120 * 60 * 1000;
 const NEARBY_TTL_MINUTES = 30;
 const CARD_TTL_MINUTES = 120;
-const HELP_CARD_NOTE = "我需要協助，請用卡片回覆可協助方式。";
+const HELP_CARD_NOTE = "我需要協助，請附近使用者回覆這張卡片。";
 
 const defaultState = {
   profile: {
