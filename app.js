@@ -607,9 +607,11 @@ async function refreshNearbyPeople() {
 
     const people = Array.isArray(data.people) ? data.people : [];
     state.nearbyPeople = people;
-    await refreshSharedCards(false);
+    const cardsUpdated = await refreshSharedCards(false);
     renderNearbyPeople(people);
-    els.messageOutput.textContent = `附近列表、揪團卡與卡片回覆已更新；你的約略位置會保留 ${data.ttlMinutes || NEARBY_TTL_MINUTES} 分鐘。`;
+    els.messageOutput.textContent = cardsUpdated
+      ? `附近列表、揪團卡與卡片回覆已更新；你的約略位置會保留 ${data.ttlMinutes || NEARBY_TTL_MINUTES} 分鐘。`
+      : `附近列表已更新；揪團卡暫時無法更新。你的約略位置會保留 ${data.ttlMinutes || NEARBY_TTL_MINUTES} 分鐘。`;
   } catch {
     clearLiveNearbyData();
     els.messageOutput.textContent = "附近功能暫時無法連線，請稍後再試。";
@@ -619,7 +621,7 @@ async function refreshNearbyPeople() {
 async function refreshSharedCards(showMessage = true) {
   if (!canUseLocationFeatures()) {
     clearSharedCards();
-    return;
+    return false;
   }
 
   try {
@@ -638,9 +640,11 @@ async function refreshSharedCards(showMessage = true) {
     renderRallyCards();
     renderRadar();
     if (showMessage) els.messageOutput.textContent = "附近揪團卡已更新。";
+    return true;
   } catch {
     clearSharedCards();
     if (showMessage) els.messageOutput.textContent = "附近揪團卡暫時無法連線。";
+    return false;
   }
 }
 
