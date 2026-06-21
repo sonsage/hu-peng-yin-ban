@@ -387,6 +387,14 @@ button,
   color: var(--muted);
 }
 
+button:disabled,
+select:disabled,
+textarea:disabled,
+input:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
 .notice,
 .location-card,
 .message-output,

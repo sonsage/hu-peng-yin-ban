@@ -215,6 +215,15 @@ function focusHelpCardForm() {
   els.rallyNote.focus({ preventScroll: true });
 }
 
+function canUseLocationFeatures() {
+  return Boolean(els.locationConsent.checked && state.lastLocation && state.status !== "關閉位置");
+}
+
+function setControlLock(control, locked, title) {
+  control.disabled = locked;
+  control.title = locked ? title : "";
+}
+
 function renderProfile() {
   els.nickname.value = state.profile.nickname;
   document.querySelectorAll("input[name='vehicle']").forEach((input) => {
@@ -243,6 +252,16 @@ function renderStatus() {
     ? `更新 ${formatTime(state.lastLocation.updatedAt)}`
     : "未更新";
   els.openGoogleMaps.disabled = !state.lastLocation || state.status === "關閉位置";
+}
+
+function renderLocationFeatureLocks() {
+  const locked = !canUseLocationFeatures();
+  const title = "請先勾選定位同意並更新定位";
+  const rallySubmit = els.rallyForm.querySelector("button[type='submit']");
+
+  [els.rallyType, els.rallyNote, rallySubmit, els.refreshNearby, els.shortMessage, els.composeMessage]
+    .filter(Boolean)
+    .forEach((control) => setControlLock(control, locked, title));
 }
 
 function renderRadar() {
@@ -294,6 +313,7 @@ function renderRadar() {
 
 function renderRallyCards() {
   pruneExpiredCards();
+  const replyLocked = !canUseLocationFeatures();
   els.activeCardCount.textContent = state.rallyCards.length;
 
   if (!state.rallyCards.length) {
@@ -312,7 +332,7 @@ function renderRallyCards() {
             <svg class="icon"><use href="#i-trash"></use></svg>
           </button>
         ` : `
-          <button class="ghost small-action" type="button" data-reply-card="${escapeAttr(card.id)}">
+          <button class="ghost small-action" type="button" data-reply-card="${escapeAttr(card.id)}" ${replyLocked ? 'disabled title="請先勾選定位同意並更新定位"' : ""}>
             回覆
           </button>
         `}
@@ -343,6 +363,13 @@ function renderNearby() {
   if (state.status === "關閉位置") {
     els.nearbyList.className = "nearby-list empty-state";
     els.nearbyList.textContent = "位置已關閉，不會更新或顯示附近使用者。";
+    clearNearbyPeople();
+    return;
+  }
+
+  if (!els.locationConsent.checked) {
+    els.nearbyList.className = "nearby-list empty-state";
+    els.nearbyList.textContent = "請先勾選定位同意，才能查看附近使用者。";
     clearNearbyPeople();
     return;
   }
@@ -420,6 +447,7 @@ function renderTemplates() {
 function render() {
   renderProfile();
   renderStatus();
+  renderLocationFeatureLocks();
   renderRallyCards();
   renderNearby();
   renderChecklist();
@@ -568,7 +596,7 @@ async function refreshNearbyPeople() {
 }
 
 async function refreshSharedCards(showMessage = true) {
-  if (!state.lastLocation || state.status === "關閉位置") {
+  if (!canUseLocationFeatures()) {
     state.rallyCards = [];
     renderRallyCards();
     return;
@@ -596,8 +624,8 @@ async function refreshSharedCards(showMessage = true) {
 }
 
 async function publishSharedCard(type, note) {
-  if (!state.lastLocation || state.status === "關閉位置") {
-    els.messageOutput.textContent = "請先開啟位置並更新定位，才能發布給附近使用者。";
+  if (!canUseLocationFeatures()) {
+    els.messageOutput.textContent = "請先勾選定位同意並更新定位，才能發布給附近使用者。";
     return false;
   }
 
@@ -642,8 +670,8 @@ async function deleteSharedCard(cardId) {
 }
 
 async function replySharedCard(cardId) {
-  if (!state.lastLocation || state.status === "關閉位置") {
-    els.messageOutput.textContent = "請先開啟位置並更新定位，才能回覆卡片。";
+  if (!canUseLocationFeatures()) {
+    els.messageOutput.textContent = "請先勾選定位同意並更新定位，才能回覆卡片。";
     return;
   }
 
