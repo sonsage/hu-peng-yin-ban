@@ -2,6 +2,7 @@ const STORAGE_KEY = "hu-peng-yin-ban-tool";
 const LEGACY_STORAGE_KEY = "road-help-mvp";
 const CARD_TTL_MS = 120 * 60 * 1000;
 const NEARBY_TTL_MINUTES = 30;
+const CARD_TTL_MINUTES = 120;
 
 const defaultState = {
   profile: {
@@ -249,14 +250,17 @@ function renderRallyCards() {
     <article class="rally-card">
       <div class="rally-card-head">
         <strong>${escapeHtml(card.type)}</strong>
-        <button class="icon-action danger" type="button" data-delete-card="${escapeAttr(card.id)}" aria-label="刪除 ${escapeAttr(card.type)} 卡片">
-          <svg class="icon"><use href="#i-trash"></use></svg>
-        </button>
+        ${card.ownerId === state.profile.id ? `
+          <button class="icon-action danger" type="button" data-delete-card="${escapeAttr(card.id)}" aria-label="刪除 ${escapeAttr(card.type)} 卡片">
+            <svg class="icon"><use href="#i-trash"></use></svg>
+          </button>
+        ` : ""}
       </div>
       <p>${escapeHtml(card.note || "無補充文字")}</p>
       <div class="meta">
-        <span>${escapeHtml(state.profile.nickname || "匿名")}</span>
-        <span>${escapeHtml(state.profile.vehicle)}</span>
+        <span>${escapeHtml(card.nickname || "匿名")}</span>
+        <span>${escapeHtml(card.vehicle || "未設定")}</span>
+        ${Number.isFinite(card.distanceMeters) ? `<span>${formatDistance(card.distanceMeters)}</span>` : ""}
         <span>剩 ${minutesLeft(card.expiresAt)} 分鐘</span>
       </div>
     </article>
@@ -476,9 +480,82 @@ async function refreshNearbyPeople() {
     }
 
     renderNearbyPeople(Array.isArray(data.people) ? data.people : []);
+    await refreshSharedCards(false);
     els.messageOutput.textContent = `附近列表已更新；你的約略位置會保留 ${data.ttlMinutes || NEARBY_TTL_MINUTES} 分鐘。`;
   } catch {
     els.messageOutput.textContent = "附近功能暫時無法連線，請稍後再試。";
+  }
+}
+
+async function refreshSharedCards(showMessage = true) {
+  if (!state.lastLocation || state.status === "關閉位置") {
+    state.rallyCards = [];
+    renderRallyCards();
+    return;
+  }
+
+  try {
+    const mode = getRangeMode();
+    const params = new URLSearchParams({
+      lat: String(state.lastLocation.lat),
+      lng: String(state.lastLocation.lng),
+      radiusKm: String(mode.rings[mode.rings.length - 1]),
+    });
+    const response = await fetch(`/api/cards?${params.toString()}`);
+    if (!response.ok) throw new Error("cards_failed");
+    const data = await response.json();
+    if (!data.configured) throw new Error("cards_not_configured");
+    state.rallyCards = Array.isArray(data.cards) ? data.cards : [];
+    renderRallyCards();
+    if (showMessage) els.messageOutput.textContent = "附近揪團卡已更新。";
+  } catch {
+    if (showMessage) els.messageOutput.textContent = "附近揪團卡暫時無法連線。";
+  }
+}
+
+async function publishSharedCard(type, note) {
+  if (!state.lastLocation || state.status === "關閉位置") {
+    els.messageOutput.textContent = "請先開啟位置並更新定位，才能發布給附近使用者。";
+    return false;
+  }
+
+  try {
+    const response = await fetch("/api/cards", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ownerId: state.profile.id,
+        nickname: state.profile.nickname || "匿名",
+        vehicle: state.profile.vehicle,
+        type,
+        note,
+        location: state.lastLocation,
+      }),
+    });
+    if (!response.ok) throw new Error("publish_failed");
+    const data = await response.json();
+    if (!data.configured) throw new Error("cards_not_configured");
+    await refreshSharedCards(false);
+    els.messageOutput.textContent = `已發布給附近使用者，${data.ttlMinutes || CARD_TTL_MINUTES} 分鐘後自動過期。`;
+    return true;
+  } catch {
+    els.messageOutput.textContent = "卡片發布失敗，請確認 Cloudflare KV 已綁定並稍後再試。";
+    return false;
+  }
+}
+
+async function deleteSharedCard(cardId) {
+  try {
+    const response = await fetch("/api/cards", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cardId, ownerId: state.profile.id }),
+    });
+    if (!response.ok) throw new Error("delete_failed");
+    await refreshSharedCards(false);
+    els.messageOutput.textContent = "已刪除公開卡片。";
+  } catch {
+    els.messageOutput.textContent = "刪除公開卡片失敗，請稍後再試。";
   }
 }
 
@@ -592,34 +669,25 @@ els.disableAntiTheft.addEventListener("click", () => {
   els.messageOutput.textContent = "已解除位置防盜警戒。";
 });
 
-els.rallyForm.addEventListener("submit", (event) => {
+els.rallyForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (state.status === "關閉位置") {
-    els.messageOutput.textContent = "位置已關閉時仍可建立卡片，但附近使用者列表不會更新你的定位。";
+    els.messageOutput.textContent = "位置已關閉，不能發布給附近使用者。";
+    return;
   }
 
-  state.rallyCards.unshift({
-    id: createId("card"),
-    type: els.rallyType.value,
-    note: els.rallyNote.value.trim().slice(0, 60),
-    createdAt: Date.now(),
-    expiresAt: Date.now() + CARD_TTL_MS,
-  });
-  els.rallyNote.value = "";
-  saveState();
-  render();
+  const published = await publishSharedCard(els.rallyType.value, els.rallyNote.value.trim().slice(0, 60));
+  if (published) els.rallyNote.value = "";
 });
 
-els.rallyCards.addEventListener("click", (event) => {
+els.rallyCards.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-delete-card]");
   if (!button) return;
 
   const confirmed = window.confirm("確定刪除這張揪團卡？");
   if (!confirmed) return;
 
-  state.rallyCards = state.rallyCards.filter((card) => card.id !== button.dataset.deleteCard);
-  saveState();
-  renderRallyCards();
+  await deleteSharedCard(button.dataset.deleteCard);
 });
 
 els.checklist.addEventListener("change", (event) => {
@@ -666,11 +734,11 @@ els.templateMessages.addEventListener("click", (event) => {
   renderTemplates();
 });
 
-els.composeMessage.addEventListener("click", () => {
+els.composeMessage.addEventListener("click", async () => {
   const extra = els.shortMessage.value.trim();
-  els.messageOutput.textContent = extra
-    ? `${state.selectedTemplate} 補充：${extra}`
-    : state.selectedTemplate;
+  const note = extra ? `${state.selectedTemplate} 補充：${extra}` : state.selectedTemplate;
+  const published = await publishSharedCard("模板訊息", note.slice(0, 80));
+  if (published) els.shortMessage.value = "";
 });
 
 els.deleteData.addEventListener("click", () => {
