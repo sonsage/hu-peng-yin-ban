@@ -484,6 +484,7 @@ button,
 
 .radar-ring,
 .radar-self,
+.radar-person,
 .ring-label,
 .radar-caption {
   position: absolute;
@@ -538,6 +539,34 @@ button,
   background: linear-gradient(135deg, #8d99aa, #657083);
   font-size: 12px;
 }
+
+.radar-person {
+  width: 34px;
+  height: 34px;
+  transform: translate(-50%, -50%);
+  border: 3px solid rgba(255, 255, 255, .94);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 28px;
+  text-align: center;
+  box-shadow: 0 8px 18px rgba(46, 55, 75, .18);
+  z-index: 2;
+}
+
+.radar-person::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, .72);
+}
+
+.radar-person.person-0 { background: var(--orange); }
+.radar-person.person-1 { background: var(--purple); }
+.radar-person.person-2 { background: var(--pink); }
+.radar-person.person-3 { background: var(--teal); }
 
 .ring-label {
   border-radius: 999px;

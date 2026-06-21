@@ -35,6 +35,7 @@ export async function onRequestPost({ request, env }) {
       vehicle: item.vehicle,
       status: item.status,
       distanceMeters: Math.round(distanceMeters(user, item) / 100) * 100,
+      bearingDegrees: quantizeBearing(bearingDegrees(user, item)),
       updatedAt: item.updatedAt,
     }))
     .filter((item) => item.distanceMeters <= user.radiusKm * 1000)
@@ -117,6 +118,20 @@ function distanceMeters(from, to) {
   const h = Math.sin(dLat / 2) ** 2
     + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
   return 2 * radius * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
+function bearingDegrees(from, to) {
+  const lat1 = from.lat * Math.PI / 180;
+  const lat2 = to.lat * Math.PI / 180;
+  const dLng = (to.lng - from.lng) * Math.PI / 180;
+  const y = Math.sin(dLng) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2)
+    - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+function quantizeBearing(degrees) {
+  return Math.round(degrees / 30) * 30 % 360;
 }
 
 function json(body, status = 200) {

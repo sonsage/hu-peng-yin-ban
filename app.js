@@ -12,6 +12,7 @@ const defaultState = {
   status: "我已出發",
   lastLocation: null,
   rallyCards: [],
+  nearbyPeople: [],
   selectedTemplate: "我在附近，想找人一起走一段。",
   checklist: {},
   checklistConfirmed: {},
@@ -202,6 +203,23 @@ function renderStatus() {
 function renderRadar() {
   const mode = getRangeMode();
   const isLocated = Boolean(state.lastLocation && state.status !== "關閉位置");
+  const maxDistance = mode.rings[mode.rings.length - 1] * 1000;
+  const people = isLocated ? state.nearbyPeople.slice(0, 8) : [];
+  const peopleDots = people.map((person, index) => {
+    const distance = Math.min(Number(person.distanceMeters || 0), maxDistance);
+    const bearing = Number(person.bearingDegrees || 0);
+    const radiusPercent = 43 * Math.min(1, distance / maxDistance);
+    const angle = (bearing - 90) * Math.PI / 180;
+    const left = 50 + Math.cos(angle) * radiusPercent;
+    const top = 50 + Math.sin(angle) * radiusPercent;
+    const label = person.vehicle === "自行車" ? "自" : person.vehicle === "重機" ? "重" : person.vehicle === "徒步" ? "步" : "機";
+
+    return `
+      <span class="radar-person person-${index % 4}" style="left:${left.toFixed(1)}%; top:${top.toFixed(1)}%;" title="${escapeAttr(person.nickname || "匿名")} ${formatDistance(distance)}">
+        ${escapeHtml(label)}
+      </span>
+    `;
+  }).join("");
 
   els.rangeRadar.innerHTML = `
     <span class="radar-ring ring-outer"></span>
@@ -210,8 +228,9 @@ function renderRadar() {
     <span class="ring-label label-inner">${formatRangeLabel(mode.rings[0])}</span>
     <span class="ring-label label-middle">${formatRangeLabel(mode.rings[1])}</span>
     <span class="ring-label label-outer">${formatRangeLabel(mode.rings[2])}</span>
+    ${peopleDots}
     <span class="radar-self ${isLocated ? "" : "muted"}">${isLocated ? "我" : "未定位"}</span>
-    <span class="radar-caption">${mode.name}距離圈層；真實定位後顯示自己位置</span>
+    <span class="radar-caption">${people.length ? "附近點為約略方位與距離，非精準座標" : `${mode.name}距離圈層；更新附近後顯示約略點`}</span>
   `;
 }
 
@@ -248,12 +267,14 @@ function renderNearby() {
   if (state.status === "關閉位置") {
     els.nearbyList.className = "nearby-list empty-state";
     els.nearbyList.textContent = "位置已關閉，不會更新或顯示附近使用者。";
+    state.nearbyPeople = [];
     return;
   }
 
   if (!state.lastLocation) {
     els.nearbyList.className = "nearby-list empty-state";
     els.nearbyList.textContent = "請先勾選定位同意並更新定位，才能查看附近使用者。";
+    state.nearbyPeople = [];
     return;
   }
 
@@ -262,6 +283,10 @@ function renderNearby() {
 }
 
 function renderNearbyPeople(people) {
+  state.nearbyPeople = people;
+  saveState();
+  renderRadar();
+
   if (!people.length) {
     const rings = getRangeMode().rings;
     els.nearbyList.className = "nearby-list empty-state";
@@ -493,7 +518,10 @@ els.profileForm.addEventListener("change", (event) => {
 document.querySelectorAll(".segmented.status button").forEach((button) => {
   button.addEventListener("click", () => {
     state.status = button.dataset.status;
-    if (state.status === "關閉位置") state.lastLocation = null;
+    if (state.status === "關閉位置") {
+      state.lastLocation = null;
+      state.nearbyPeople = [];
+    }
     saveState();
     render();
   });
