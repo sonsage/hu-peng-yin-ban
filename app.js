@@ -3,6 +3,7 @@ const LEGACY_STORAGE_KEY = "road-help-mvp";
 const CARD_TTL_MS = 120 * 60 * 1000;
 const NEARBY_TTL_MINUTES = 30;
 const CARD_TTL_MINUTES = 120;
+const HELP_CARD_NOTE = "我需要協助，請用卡片回覆可協助方式。";
 
 const defaultState = {
   profile: {
@@ -45,7 +46,7 @@ const templates = [
   "我在附近，想找人一起走一段。",
   "前方路況如何？有人剛經過嗎？",
   "附近有補給點或休息點嗎？",
-  "我需要協助，請在「發起附近揪團卡」發布可協助狀態。",
+  HELP_CARD_NOTE,
   "我先休息一下，位置稍後關閉。",
   "已抵達，這張卡可以忽略。",
 ];
@@ -177,6 +178,15 @@ function minutesLeft(expiresAt) {
 function pruneExpiredCards() {
   state.rallyCards = state.rallyCards.filter((card) => card.expiresAt > Date.now());
   saveState();
+}
+
+function focusHelpCardForm() {
+  els.rallyType.value = "需要協助";
+  if (!els.rallyNote.value.trim()) {
+    els.rallyNote.value = HELP_CARD_NOTE;
+  }
+  els.rallyForm.scrollIntoView({ behavior: "smooth", block: "start" });
+  els.rallyNote.focus({ preventScroll: true });
 }
 
 function renderProfile() {
@@ -672,6 +682,12 @@ document.querySelectorAll(".segmented.status button").forEach((button) => {
     }
     saveState();
     render();
+    if (state.status === "需要協助") {
+      focusHelpCardForm();
+      els.messageOutput.textContent = state.lastLocation
+        ? "已切到需要協助；請確認下方卡片內容，按「建立 120 分鐘卡片」後附近使用者才能回覆。"
+        : "已切到需要協助；請先勾選定位同意並更新定位，再建立下方 120 分鐘卡片。";
+    }
   });
 });
 
