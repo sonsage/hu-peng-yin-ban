@@ -224,7 +224,10 @@ function renderProfile() {
 
 function renderStatus() {
   renderRadar();
+  const locationAllowed = els.locationConsent.checked;
   document.querySelectorAll(".segmented.status button").forEach((button) => {
+    button.disabled = !locationAllowed;
+    button.title = locationAllowed ? "" : "請先勾選定位同意";
     button.classList.toggle("active", button.dataset.status === state.status);
   });
 
@@ -709,6 +712,10 @@ els.profileForm.addEventListener("change", (event) => {
 
 document.querySelectorAll(".segmented.status button").forEach((button) => {
   button.addEventListener("click", () => {
+    if (!els.locationConsent.checked) {
+      els.messageOutput.textContent = "請先勾選定位同意，才能選擇簽到狀態。";
+      return;
+    }
     state.status = button.dataset.status;
     if (state.status === "關閉位置") {
       state.lastLocation = null;
@@ -723,6 +730,17 @@ document.querySelectorAll(".segmented.status button").forEach((button) => {
         : "已切到需要協助；請先勾選定位同意並更新定位，再建立下方 120 分鐘卡片。";
     }
   });
+});
+
+els.locationConsent.addEventListener("change", () => {
+  if (!els.locationConsent.checked) {
+    state.status = "我已出發";
+    state.lastLocation = null;
+    state.nearbyPeople = [];
+    state.rallyCards = [];
+    els.messageOutput.textContent = "已取消定位同意；簽到狀態、雷達與附近資料已清空。";
+  }
+  render();
 });
 
 els.updateLocation.addEventListener("click", updateLocation);

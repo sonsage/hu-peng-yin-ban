@@ -376,6 +376,17 @@ button,
   color: #fff;
 }
 
+.segmented.status button:disabled {
+  cursor: not-allowed;
+  opacity: .48;
+}
+
+.segmented.status button.active:disabled {
+  background: #e8eef5;
+  border-color: var(--line);
+  color: var(--muted);
+}
+
 .notice,
 .location-card,
 .message-output,
