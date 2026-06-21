@@ -93,10 +93,10 @@ function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
     if (!raw) return cloneDefaultState();
-    const nextState = { ...cloneDefaultState(), ...JSON.parse(raw) };
-    nextState.profile = { ...cloneDefaultState().profile, ...nextState.profile };
+    const savedState = JSON.parse(raw);
+    const nextState = buildRuntimeState(savedState);
     if (!nextState.profile.id) nextState.profile.id = createId("local");
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toPersistentState(nextState)));
     localStorage.removeItem(LEGACY_STORAGE_KEY);
     return nextState;
   } catch {
@@ -108,6 +108,32 @@ function cloneDefaultState() {
   return JSON.parse(JSON.stringify(defaultState));
 }
 
+function buildRuntimeState(savedState = {}) {
+  const nextState = cloneDefaultState();
+  nextState.profile = { ...nextState.profile, ...(savedState.profile || {}) };
+  nextState.selectedTemplate = savedState.selectedTemplate || nextState.selectedTemplate;
+  nextState.checklist = savedState.checklist || {};
+  nextState.checklistConfirmed = savedState.checklistConfirmed || {};
+  nextState.antiTheft.radius = Number(savedState.antiTheft?.radius) || nextState.antiTheft.radius;
+  return nextState;
+}
+
+function toPersistentState(source = state) {
+  return {
+    profile: {
+      id: source.profile.id,
+      nickname: source.profile.nickname,
+      vehicle: source.profile.vehicle,
+    },
+    selectedTemplate: source.selectedTemplate,
+    checklist: source.checklist,
+    checklistConfirmed: source.checklistConfirmed,
+    antiTheft: {
+      radius: Number(source.antiTheft?.radius) || defaultState.antiTheft.radius,
+    },
+  };
+}
+
 function createId(prefix) {
   if (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") {
     return globalThis.crypto.randomUUID();
@@ -117,7 +143,7 @@ function createId(prefix) {
 }
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(toPersistentState()));
   localStorage.removeItem(LEGACY_STORAGE_KEY);
 }
 
